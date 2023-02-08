@@ -1,0 +1,7 @@
+var a;
+var b;
+
+a = "assigned";
+print a; // should be OK
+
+print b; // should fail on runtime
