@@ -1,0 +1,12 @@
+fun hanoi(layer, from, via, to) {
+    if (layer == 1) {
+        print "move disc from:" + from + " to: " + to;
+        return;
+    } else {
+        hanoi(layer - 1, from, to, via);
+        hanoi(1, from, via, to);
+        hanoi(layer - 1, via, from, to);
+    }
+}
+
+hanoi(13, "A", "B", "C");
