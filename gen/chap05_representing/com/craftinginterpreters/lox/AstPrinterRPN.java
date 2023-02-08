@@ -2,41 +2,36 @@ package com.craftinginterpreters.lox;
 
 import java.util.List;
 
-class AstPrinterRPN implements Expr.Visitor<String> {
-    String print(Expr expr) {
-        return expr.accept(this);
-    }
+class AstPrinterRPN implements Expr.Visitor<String>
+{
+    String print(Expr expr) { return expr.accept(this); }
 
-    @Override
-    public String visitBinaryExpr(Expr.Binary expr) {
+    @Override public String visitBinaryExpr(Expr.Binary expr)
+    {
         return parenthesize(expr.operator.lexeme, expr.left, expr.right);
     }
 
-    @Override
-    public String visitGroupingExpr(Expr.Grouping expr) {
-        return parenthesize("group", expr.expression);
-    }
+    @Override public String visitGroupingExpr(Expr.Grouping expr) { return parenthesize("group", expr.expression); }
 
-    @Override
-    public String visitLiteralExpr(Expr.Literal expr) {
-        if (expr.value == null) return "nil";
+    @Override public String visitLiteralExpr(Expr.Literal expr)
+    {
+        if (expr.value == null)
+            return "nil";
         return expr.value.toString();
     }
 
-    @Override
-    public String visitUnaryExpr(Expr.Unary expr) {
-        return parenthesize(expr.operator.lexeme, expr.right);
-    }
-    private String parenthesize(String name, Expr... exprs) {
+    @Override public String visitUnaryExpr(Expr.Unary expr) { return parenthesize(expr.operator.lexeme, expr.right); }
+    private String parenthesize(String name, Expr... exprs)
+    {
         StringBuilder builder = new StringBuilder();
 
-        //builder.append("(").append(name);
+        // builder.append("(").append(name);
         for (Expr expr : exprs) {
             // builder.append(" ");
             builder.append(expr.accept(this));
             builder.append(" ");
         }
-        //builder.append(")");
+        // builder.append(")");
         builder.append(name).append(" ");
 
         return builder.toString();
@@ -44,7 +39,8 @@ class AstPrinterRPN implements Expr.Visitor<String> {
     // Note: AstPrinting other types of syntax trees is not shown in the
     // book, but this is provided here as a reference for those reading
     // the full code.
-    private String parenthesize2(String name, Object... parts) {
+    private String parenthesize2(String name, Object... parts)
+    {
         StringBuilder builder = new StringBuilder();
 
         builder.append("(").append(name);
@@ -54,11 +50,12 @@ class AstPrinterRPN implements Expr.Visitor<String> {
         return builder.toString();
     }
 
-    private void transform(StringBuilder builder, Object... parts) {
+    private void transform(StringBuilder builder, Object... parts)
+    {
         for (Object part : parts) {
             builder.append(" ");
             if (part instanceof Expr) {
-                builder.append(((Expr)part).accept(this));
+                builder.append(((Expr) part).accept(this));
             } else if (part instanceof Token) {
                 builder.append(((Token) part).lexeme);
             } else if (part instanceof List) {
@@ -68,17 +65,12 @@ class AstPrinterRPN implements Expr.Visitor<String> {
             }
         }
     }
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         Expr expression = new Expr.Binary(
-                new Expr.Binary(
-                    new Expr.Literal(123),
-                    new Token(TokenType.PLUS, "+", null, 1),
-                    new Expr.Literal(345)),
-                new Token(TokenType.STAR, "*", null, 1),
-                new Expr.Binary(
-                    new Expr.Literal(4),
-                    new Token(TokenType.PLUS, "-", null, 1),
-                    new Expr.Literal(3)));
+            new Expr.Binary(new Expr.Literal(123), new Token(TokenType.PLUS, "+", null, 1), new Expr.Literal(345)),
+            new Token(TokenType.STAR, "*", null, 1),
+            new Expr.Binary(new Expr.Literal(4), new Token(TokenType.PLUS, "-", null, 1), new Expr.Literal(3)));
         System.out.println(new AstPrinterRPN().print(expression));
     }
 }
