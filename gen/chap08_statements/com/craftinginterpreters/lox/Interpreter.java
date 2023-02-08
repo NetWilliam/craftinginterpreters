@@ -126,7 +126,12 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
         // Unreachable.
         return null;
     }
-    @Override public Object visitVariableExpr(Expr.Variable expr) { return environment.get(expr.name); }
+    @Override public Object visitVariableExpr(Expr.Variable expr) {
+    Object res = environment.get(expr.name);
+    if (res == null)
+        throw new RuntimeError(expr.name, String.format("variable %s is accessed before assigned!", expr.name.lexeme));
+    return res;
+    }
     private void checkNumberOperand(Token operator, Object operand)
     {
         if (operand instanceof Double)
