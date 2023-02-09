@@ -1,0 +1,9 @@
+var sum = 321;
+var acc = 0;
+for (var b = 1; acc < sum; b = b + 1) {
+    acc = acc + b;
+    if (acc > sum) {
+        print b;
+        break;
+    }
+}
