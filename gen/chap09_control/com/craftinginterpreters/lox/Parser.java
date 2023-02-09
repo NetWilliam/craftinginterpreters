@@ -3,6 +3,7 @@ package com.craftinginterpreters.lox;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.lang.Thread;
 
 import static com.craftinginterpreters.lox.TokenType.*;
 
@@ -14,6 +15,7 @@ class Parser
 
     private final List<Token> tokens;
     private int current = 0;
+    private int in_loop = 0;
 
     Parser(List<Token> tokens) { this.tokens = tokens; }
     List<Stmt> parse()
@@ -50,8 +52,21 @@ class Parser
             return whileStatement();
         if (match(LEFT_BRACE))
             return new Stmt.Block(block());
+        if (peek().type == BREAK)
+            if (in_loop == 0) {
+                Thread.dumpStack();
+                throw error(peek(), "`break` outside of while/for loop");
+            }
+            else
+                return breakStatement();
 
         return expressionStatement();
+    }
+    private Stmt breakStatement() {
+        Token token = consume(BREAK, "Expect `break` symbol");
+        consume(SEMICOLON, "Except `;` after `break`");
+        Stmt.Break bs = new Stmt.Break(token);
+        return bs;
     }
     private Stmt forStatement()
     {
@@ -77,7 +92,9 @@ class Parser
             increment = expression();
         }
         consume(RIGHT_PAREN, "Expect ')' after for clauses.");
+        in_loop += 1;
         Stmt body = statement();
+        in_loop -= 1;
 
         if (increment != null) {
             body = new Stmt.Block(Arrays.asList(body, new Stmt.Expression(increment)));
@@ -85,6 +102,7 @@ class Parser
 
         if (condition == null)
             condition = new Expr.Literal(true);
+
         body = new Stmt.While(condition, body);
 
         if (initializer != null) {
@@ -130,7 +148,9 @@ class Parser
         consume(LEFT_PAREN, "Expect '(' after 'while'.");
         Expr condition = expression();
         consume(RIGHT_PAREN, "Expect ')' after condition.");
+        in_loop += 1;
         Stmt body = statement();
+        in_loop -= 1;
 
         return new Stmt.While(condition, body);
     }

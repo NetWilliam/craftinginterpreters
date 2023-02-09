@@ -15,17 +15,18 @@ public class GenerateAst
         }
         String outputDir = args[0];
         defineAst(outputDir, "Expr",
-                  Arrays.asList("Assign   : Token name, Expr value", "Binary   : Expr left, Token operator, Expr right",
-                                "Grouping : Expr expression", "Literal  : Object value",
-                                "Logical  : Expr left, Token operator, Expr right",
-                                "Unary    : Token operator, Expr right", "Variable : Token name"));
+                Arrays.asList("Assign   : Token name, Expr value", "Binary   : Expr left, Token operator, Expr right",
+                    "Grouping : Expr expression", "Literal  : Object value",
+                    "Logical  : Expr left, Token operator, Expr right",
+                    "Unary    : Token operator, Expr right", "Variable : Token name"));
 
         defineAst(outputDir, "Stmt",
-                  Arrays.asList("Block      : List<Stmt> statements", "Expression : Expr expression",
-                                "If         : Expr condition, Stmt thenBranch,"
-                                    + " Stmt elseBranch",
-                                "Print      : Expr expression", "Var        : Token name, Expr initializer",
-                                "While      : Expr condition, Stmt body"));
+                Arrays.asList("Block      : List<Stmt> statements", "Expression : Expr expression",
+                    "If         : Expr condition, Stmt thenBranch,"
+                    + " Stmt elseBranch",
+                    "Print      : Expr expression", "Var        : Token name, Expr initializer",
+                    "While      : Expr condition, Stmt body",
+                    "Break      : Token token"));
     }
     private static void defineAst(String outputDir, String baseName, List<String> types) throws IOException
     {
@@ -121,10 +122,10 @@ public class GenerateAst
     class Beignet extends Pastry
     {
         @Override void accept(PastryVisitor visitor) { visitor.visitBeignet(this); }
-    }
+        }
 
     class Cruller extends Pastry
     {
         @Override void accept(PastryVisitor visitor) { visitor.visitCruller(this); }
-    }
+        }
 }

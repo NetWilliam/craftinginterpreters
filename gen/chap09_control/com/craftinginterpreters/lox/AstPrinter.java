@@ -47,6 +47,11 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String>
         return parenthesize2("while", stmt.condition, stmt.body);
     }
 
+    @Override public String visitBreakStmt(Stmt.Break stmt)
+    {
+        return "break";
+    }
+
     @Override public String visitAssignExpr(Expr.Assign expr)
     {
         return parenthesize2("=", expr.name.lexeme, expr.value);

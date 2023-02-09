@@ -2,9 +2,12 @@ package com.craftinginterpreters.lox;
 
 import java.util.List;
 
+class BreakException extends Exception {};
+
 class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
 {
     private Environment environment = new Environment();
+    int in_break = 0;
 
     void interpret(List<Stmt> statements)
     {
@@ -26,6 +29,9 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
 
             for (Stmt statement : statements) {
                 execute(statement);
+                if (in_break != 0) {
+                    break;
+                }
             }
         } finally {
             this.environment = previous;
@@ -70,9 +76,15 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
     {
         while (isTruthy(evaluate(stmt.condition))) {
             execute(stmt.body);
+            if (in_break != 0) {
+                break;
+            }
         }
+        if (in_break != 0) in_break--;
         return null;
     }
+    @Override public Void visitBreakStmt(Stmt.Break stmt) { in_break++; return null;}
+
     @Override public Object visitAssignExpr(Expr.Assign expr)
     {
         Object value = evaluate(expr.value);
