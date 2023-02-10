@@ -3,6 +3,8 @@ package com.craftinginterpreters.lox;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
+import java.lang.Thread;
 
 import static com.craftinginterpreters.lox.TokenType.*;
 
@@ -30,7 +32,10 @@ class Parser
     {
         try {
             if (match(FUN))
-                return function("function");
+                if (peek().type == LEFT_PAREN)
+                    return function("lambda");
+                else
+                    return function("function");
             if (match(VAR))
                 return varDeclaration();
 
@@ -157,7 +162,12 @@ class Parser
     }
     private Stmt.Function function(String kind)
     {
-        Token name = consume(IDENTIFIER, "Expect " + kind + " name.");
+        Token name;
+        // Thread.dumpStack();
+        if (kind == "function")
+            name = consume(IDENTIFIER, "Expect " + kind + " name.");
+        else
+            name = new Token(IDENTIFIER, "$lambda$" + UUID.randomUUID().toString(), null, peek().line);
         consume(LEFT_PAREN, "Expect '(' after " + kind + " name.");
         List<Token> parameters = new ArrayList<>();
         if (!check(RIGHT_PAREN)) {
@@ -173,6 +183,8 @@ class Parser
 
         consume(LEFT_BRACE, "Expect '{' before " + kind + " body.");
         List<Stmt> body = block();
+        if (kind == "lambda" && peek().type == SEMICOLON)
+            consume(SEMICOLON, "expect consuming extra SEMICOLON in the end of lambda expression statement");
         return new Stmt.Function(name, parameters, body);
     }
     private List<Stmt> block()
@@ -304,7 +316,7 @@ class Parser
     }
     private Expr call()
     {
-        Expr expr = primary();
+        Expr expr = lambda();
 
         while (true) { // [while-true]
             if (match(LEFT_PAREN)) {
@@ -315,6 +327,17 @@ class Parser
         }
 
         return expr;
+    }
+    private Expr lambda()
+    {
+        Expr expr;
+
+        if (match(FUN)) {
+            Stmt.Function func = function("lambda");
+            expr = new Expr.Lambda(func.name, func.params, func.body);
+            return expr;
+        }
+        return primary();
     }
     private Expr primary()
     {
@@ -338,7 +361,7 @@ class Parser
             consume(RIGHT_PAREN, "Expect ')' after expression.");
             return new Expr.Grouping(expr);
         }
-
+        // Thread.dumpStack();
         throw error(peek(), "Expect expression.");
     }
     private boolean match(TokenType... types)

@@ -176,6 +176,11 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
 
         return function.call(this, arguments);
     }
+    @Override public Object visitLambdaExpr(Expr.Lambda expr)
+    {
+        LoxFunction function = new LoxFunction(new Stmt.Function(expr.name, expr.params, expr.body), environment);
+        return function;
+    }
     @Override public Object visitGroupingExpr(Expr.Grouping expr) { return evaluate(expr.expression); }
     @Override public Object visitLiteralExpr(Expr.Literal expr) { return expr.value; }
     @Override public Object visitLogicalExpr(Expr.Logical expr)

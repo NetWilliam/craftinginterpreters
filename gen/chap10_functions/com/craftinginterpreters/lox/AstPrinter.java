@@ -87,6 +87,8 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String>
 
     @Override public String visitCallExpr(Expr.Call expr) { return parenthesize2("call", expr.callee, expr.arguments); }
 
+    @Override public String visitLambdaExpr(Expr.Lambda expr) { return expr.name.lexeme; }
+
     @Override public String visitGroupingExpr(Expr.Grouping expr) { return parenthesize("group", expr.expression); }
 
     @Override public String visitLiteralExpr(Expr.Literal expr)
