@@ -1,0 +1,42 @@
+fun get10th_adder() {
+    var x = 0;
+    fun get9th_adder() {
+        fun get8th_adder() {
+            fun get7th_adder() {
+                fun get6th_adder() {
+                    fun get5th_adder() {
+                        fun get4th_adder() {
+                            fun get3rd_adder() {
+                                fun get2nd_adder() {
+                                    fun get1st_adder() {
+                                        x = x + 1;
+                                        return x;
+                                    }
+                                    return get1st_adder;
+                                }
+                                return get2nd_adder;
+                            }
+                            return get3rd_adder;
+                        }
+                        return get4th_adder;
+                    }
+                    return get5th_adder;
+                }
+                return get6th_adder;
+            }
+            return get7th_adder;
+        }
+        return get8th_adder;
+    }
+    return get9th_adder;
+}
+
+var cnt = 3000;
+var adder = get10th_adder()()()()()()()()();
+for (var i = 0; i < cnt; i = i + 1) {
+    var val = 0;
+    for (var j = 0; j < cnt; j = j + 1) {
+        val = adder();
+    }
+    // print val;
+}

@@ -1,0 +1,4 @@
+func getx(x) {
+    var a = 3; // should fail on this line
+    return x + 1;
+}
