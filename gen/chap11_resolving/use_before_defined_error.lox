@@ -1,0 +1,4 @@
+fun getx(a) {
+    var b = a + b + 1;
+    return b + 1;
+}
