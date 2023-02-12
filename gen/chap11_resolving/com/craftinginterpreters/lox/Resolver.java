@@ -9,6 +9,9 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void>
 {
     private final Interpreter interpreter;
     private final Stack<Map<String, Boolean>> scopes = new Stack<>();
+    private final Stack<Map<String, Integer>> indexes = new Stack<>();
+    private final Stack<Integer> var_idxes = new Stack<>();
+    int var_idx;
     private FunctionType currentFunction = FunctionType.NONE;
 
     Resolver(Interpreter interpreter) { this.interpreter = interpreter; }
@@ -23,6 +26,7 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void>
     {
         beginScope();
         resolve(stmt.statements);
+        interpreter.resolveBlock(stmt, var_idx);
         endScope();
         return null;
     }
@@ -140,11 +144,21 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void>
             define(param);
         }
         resolve(function.body);
+        interpreter.resolveFunction(function, var_idx);
         endScope();
         currentFunction = enclosingFunction;
     }
-    private void beginScope() { scopes.push(new HashMap<String, Boolean>()); }
-    private void endScope() { scopes.pop(); }
+    private void beginScope() {
+        scopes.push(new HashMap<String, Boolean>());
+        indexes.push(new HashMap<String, Integer>());
+        var_idxes.push(var_idx);
+        var_idx = 0;
+    }
+    private void endScope() { scopes.pop();
+        indexes.pop();
+        var_idx = var_idxes.peek();
+        var_idxes.pop();
+    }
     private void declare(Token name)
     {
         if (scopes.isEmpty())
@@ -154,8 +168,11 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void>
         if (scope.containsKey(name.lexeme)) {
             Lox.error(name, "Already a variable with this name in this scope.");
         }
+        Map<String, Integer> index = indexes.peek();
 
         scope.put(name.lexeme, false);
+        index.put(name.lexeme, var_idx);
+        var_idx += 1;
     }
     private void define(Token name)
     {
@@ -167,7 +184,7 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void>
     {
         for (int i = scopes.size() - 1; i >= 0; i--) {
             if (scopes.get(i).containsKey(name.lexeme)) {
-                interpreter.resolve(expr, scopes.size() - 1 - i);
+                interpreter.resolve(expr, scopes.size() - 1 - i, indexes.get(i).get(name.lexeme));
                 return;
             }
         }

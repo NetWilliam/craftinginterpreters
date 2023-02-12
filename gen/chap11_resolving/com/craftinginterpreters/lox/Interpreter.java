@@ -10,6 +10,8 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
     final Environment globals = new Environment();
     private Environment environment = globals;
     private final Map<Expr, Integer> locals = new HashMap<>();
+    private final Map<Expr, Integer> index = new HashMap<>();
+    private final Map<Stmt, Integer> bsize = new HashMap<>();
 
     Interpreter()
     {
@@ -22,7 +24,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
             }
 
             @Override public String toString() { return "<native fn>"; }
-        });
+            });
     }
 
     void interpret(List<Stmt> statements)
@@ -37,7 +39,16 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
     }
     private Object evaluate(Expr expr) { return expr.accept(this); }
     private void execute(Stmt stmt) { stmt.accept(this); }
-    void resolve(Expr expr, int depth) { locals.put(expr, depth); }
+    void resolveBlock(Stmt.Block blockStmt, int size) {
+        bsize.put(blockStmt, size);
+    }
+    void resolveFunction(Stmt.Function functionStmt, int size) {
+        bsize.put(functionStmt, size);
+    }
+    void resolve(Expr expr, int depth, int offset) {
+        locals.put(expr, depth);
+        index.put(expr, offset);
+    }
     void executeBlock(List<Stmt> statements, Environment environment)
     {
         Environment previous = this.environment;
@@ -113,9 +124,9 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
 
         Integer distance = locals.get(expr);
         if (distance != null) {
-            environment.assignAt(distance, expr.name, value);
+            environment.assignAt(distance, expr.name, index.get(expr), value);
         } else {
-            globals.assign(expr.name, value);
+            globals.assign(expr.name, -1, value);
         }
 
         return value;
@@ -182,7 +193,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
         LoxCallable function = (LoxCallable) callee;
         if (arguments.size() != function.arity()) {
             throw new RuntimeError(expr.paren,
-                                   "Expected " + function.arity() + " arguments but got " + arguments.size() + ".");
+                    "Expected " + function.arity() + " arguments but got " + arguments.size() + ".");
         }
 
         return function.call(this, arguments);
@@ -223,9 +234,9 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
     {
         Integer distance = locals.get(expr);
         if (distance != null) {
-            return environment.getAt(distance, name.lexeme);
+            return environment.getAt(distance, name.lexeme, index.get(expr));
         } else {
-            return globals.get(name);
+            return globals.get(name, -1);
         }
     }
     private void checkNumberOperand(Token operator, Object operand)
