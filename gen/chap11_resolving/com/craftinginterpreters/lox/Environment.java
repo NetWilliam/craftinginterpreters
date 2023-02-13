@@ -13,9 +13,9 @@ class Environment
     private final Map<String, Object> values = new TreeMap<>();
     private List<Object> var_list = new ArrayList<>();
     int bsize = 0;
-    Environment() { enclosing = null; }
+    Environment() { enclosing = null; bsize = 0;}
 
-    Environment(Environment enclosing) { this.enclosing = enclosing; }
+    Environment(Environment enclosing) { this.enclosing = enclosing; bsize = 0; }
     Environment(Environment enclosing, int size) {
         this.enclosing = enclosing;
         this.bsize = size;
@@ -55,7 +55,13 @@ class Environment
 
         throw new RuntimeError(name, "Undefined variable '" + name.lexeme + "'.");
     }
-    void define(String name, Object value) { values.put(name, value); }
+    void define(String name, int idx, Object value) {
+        System.out.println("name: " + name + " idx: " + idx + " bsize: " + bsize);
+        if (bsize == 0)
+            values.put(name, value);
+        else
+            var_list.set(idx, value);
+    }
     Environment ancestor(int distance)
     {
         Environment environment = this;

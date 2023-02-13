@@ -15,7 +15,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
 
     Interpreter()
     {
-        globals.define("clock", new LoxCallable() {
+        globals.define("clock", -1, new LoxCallable() {
             @Override public int arity() { return 0; }
 
             @Override public Object call(Interpreter interpreter, List<Object> arguments)
@@ -64,7 +64,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
     }
     @Override public Void visitBlockStmt(Stmt.Block stmt)
     {
-        executeBlock(stmt.statements, new Environment(environment));
+        executeBlock(stmt.statements, new Environment(environment, bsize.get(stmt)));
         return null;
     }
     @Override public Void visitExpressionStmt(Stmt.Expression stmt)
@@ -74,8 +74,9 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
     }
     @Override public Void visitFunctionStmt(Stmt.Function stmt)
     {
-        LoxFunction function = new LoxFunction(stmt, environment);
-        environment.define(stmt.name.lexeme, function);
+        LoxFunction function = new LoxFunction(stmt, environment, bsize.get(stmt));
+        System.out.println("func: " + stmt.name.lexeme + " bsize: " + bsize.get(stmt));
+        environment.define(stmt.name.lexeme, bsize.get(stmt), function);
         return null;
     }
     @Override public Void visitIfStmt(Stmt.If stmt)
@@ -108,7 +109,8 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
             value = evaluate(stmt.initializer);
         }
 
-        environment.define(stmt.name.lexeme, value);
+        int idx = bsize.get(stmt) == null ? -1 : bsize.get(stmt);
+        environment.define(stmt.name.lexeme, idx, value);
         return null;
     }
     @Override public Void visitWhileStmt(Stmt.While stmt)
@@ -234,6 +236,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
     {
         Integer distance = locals.get(expr);
         if (distance != null) {
+            System.out.println("name: " + name.lexeme + " expr: " + expr.toString() + " distance:" + distance);
             return environment.getAt(distance, name.lexeme, index.get(expr));
         } else {
             return globals.get(name, -1);
