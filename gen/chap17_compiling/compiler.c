@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -85,11 +86,41 @@ static void consume(TokenType type, const char *message)
 
     errorAtCurrent(message);
 }
-static void emitByte(uint8_t byte) { writeChunk(currentChunk(), byte, parser.previous.line); }
+static void emitByte(uint8_t byte, int single = 0)
+{
+    if (single == 0) {
+        switch (byte) {
+            case OP_ADD:
+                printf("op add\n");
+                break;
+            case OP_SUBTRACT:
+                printf("op subtract\n");
+                break;
+            case OP_MULTIPLY:
+                printf("op multiply\n");
+                break;
+            case OP_DIVIDE:
+                printf("op divide\n");
+                break;
+            case OP_NEGATE:
+                printf("op negate\n");
+                break;
+            case OP_RETURN:
+                printf("op return\n");
+                break;
+        }
+    }
+    writeChunk(currentChunk(), byte, parser.previous.line);
+}
 static void emitBytes(uint8_t byte1, uint8_t byte2)
 {
-    emitByte(byte1);
-    emitByte(byte2);
+    emitByte(byte1, 1);
+    emitByte(byte2, 1);
+    switch (byte1) {
+        case OP_CONSTANT:
+            printf("op constant %dth instack\n", (int) byte2);
+            break;
+    }
 }
 static void emitReturn() { emitByte(OP_RETURN); }
 static uint8_t makeConstant(Value value)
