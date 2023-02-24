@@ -1,0 +1,5 @@
+//var a = "hello";
+//var b = " world";
+//a + b;
+//print a + b;
+"hello " + "world!"
