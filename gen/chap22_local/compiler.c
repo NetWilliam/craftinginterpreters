@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <unordered_map>
+#include <string>
+
 #include "common.h"
 #include "compiler.h"
 #include "scanner.h"
@@ -50,6 +53,7 @@ typedef struct {
     int scopeDepth;
 } Compiler;
 
+std::unordered_map<std::string, int> quick_check;
 Parser parser;
 Compiler *current = NULL;
 Chunk *compilingChunk;
@@ -145,6 +149,9 @@ static void endScope()
     current->scopeDepth--;
 
     while (current->localCount > 0 && current->locals[current->localCount - 1].depth > current->scopeDepth) {
+        Token t = current->locals[current->localCount - 1].name;
+        std::string key(t.start, t.length);
+        quick_check.erase(key);
         emitByte(OP_POP);
         current->localCount--;
     }
@@ -165,6 +172,7 @@ static bool identifiersEqual(Token *a, Token *b)
 }
 static int resolveLocal(Compiler *compiler, Token *name)
 {
+    /*
     for (int i = compiler->localCount - 1; i >= 0; i--) {
         Local *local = &compiler->locals[i];
         if (identifiersEqual(name, &local->name)) {
@@ -174,8 +182,15 @@ static int resolveLocal(Compiler *compiler, Token *name)
             return i;
         }
     }
-
-    return -1;
+    */
+    std::string key(name->start, name->length);
+    if (quick_check.count(key) == 0)
+        return -1;
+    int idx = quick_check[key];
+    if (compiler->locals[idx].depth == -1) {
+        error("Can't read local variable in its own initializer.");
+    }
+    return idx;
 }
 static void addLocal(Token name)
 {
@@ -183,7 +198,8 @@ static void addLocal(Token name)
         error("Too many local variables in function.");
         return;
     }
-
+    std::string key(name.start, name.length);
+    quick_check[key] = current->localCount;
     Local *local = &current->locals[current->localCount++];
     local->name = name;
     local->depth = -1;
@@ -194,6 +210,16 @@ static void declareVariable()
         return;
 
     Token *name = &parser.previous;
+    std::string key(name->start, name->length);
+    if (quick_check.count(key) != 0) {
+        Local *local = &current->locals[quick_check[key]];
+        if (local->depth == -1 || local->depth == current->scopeDepth) {
+            if (identifiersEqual(name, &local->name)) {
+                error("Already a variable with this name in this scope.");
+            }
+        }
+    }
+    /*
     for (int i = current->localCount - 1; i >= 0; i--) {
         Local *local = &current->locals[i];
         if (local->depth != -1 && local->depth < current->scopeDepth) {
@@ -204,6 +230,7 @@ static void declareVariable()
             error("Already a variable with this name in this scope.");
         }
     }
+    */
 
     addLocal(*name);
 }
