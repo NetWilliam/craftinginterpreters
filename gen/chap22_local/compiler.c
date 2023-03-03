@@ -39,13 +39,16 @@ typedef struct {
     Precedence precedence;
 } ParseRule;
 
-typedef struct {
+typedef struct Local Local;
+struct Local {
     Token name;
     int depth;
-} Local;
+    Local *next;
+};
 
 typedef struct {
     Local locals[UINT8_COUNT];
+    Local *pLocals;
     int localCount;
     int scopeDepth;
 } Compiler;
@@ -144,9 +147,13 @@ static void endScope()
 {
     current->scopeDepth--;
 
-    while (current->localCount > 0 && current->locals[current->localCount - 1].depth > current->scopeDepth) {
+    // while (current->localCount > 0 && current->locals[current->localCount - 1].depth > current->scopeDepth) {
+    while (current->localCount > 0 && current->pLocals->depth > current->scopeDepth) {
         emitByte(OP_POP);
         current->localCount--;
+        Local *tmp = current->pLocals;
+        current->pLocals = current->pLocals->next;
+        free(tmp);
     }
 }
 
@@ -165,8 +172,10 @@ static bool identifiersEqual(Token *a, Token *b)
 }
 static int resolveLocal(Compiler *compiler, Token *name)
 {
-    for (int i = compiler->localCount - 1; i >= 0; i--) {
-        Local *local = &compiler->locals[i];
+    Local *curr = compiler->pLocals;
+    for (int i = compiler->localCount - 1; i >= 0; i--, curr = curr->next) {
+        // Local *local = &compiler->locals[i];
+        Local *local = curr;
         if (identifiersEqual(name, &local->name)) {
             if (local->depth == -1) {
                 error("Can't read local variable in its own initializer.");
@@ -179,12 +188,17 @@ static int resolveLocal(Compiler *compiler, Token *name)
 }
 static void addLocal(Token name)
 {
+    /*
     if (current->localCount == UINT8_COUNT) {
         error("Too many local variables in function.");
         return;
     }
+    */
 
-    Local *local = &current->locals[current->localCount++];
+    // Local *local = &current->locals[current->localCount++];
+    Local *local = (Local *) malloc(sizeof(Local));
+    local->next = current->pLocals;
+    current->pLocals = local;
     local->name = name;
     local->depth = -1;
 }
@@ -194,6 +208,7 @@ static void declareVariable()
         return;
 
     Token *name = &parser.previous;
+    /*
     for (int i = current->localCount - 1; i >= 0; i--) {
         Local *local = &current->locals[i];
         if (local->depth != -1 && local->depth < current->scopeDepth) {
@@ -203,6 +218,19 @@ static void declareVariable()
         if (identifiersEqual(name, &local->name)) {
             error("Already a variable with this name in this scope.");
         }
+    }
+    */
+    Local *curr = current->pLocals;
+    while (curr != NULL) {
+        Local *local = curr;
+        if (local->depth != -1 && local->depth < current->scopeDepth) {
+            break; // [negative]
+        }
+
+        if (identifiersEqual(name, &local->name)) {
+            error("Already a variable with this name in this scope.");
+        }
+        curr = curr->next;
     }
 
     addLocal(*name);
@@ -217,7 +245,11 @@ static uint8_t parseVariable(const char *errorMessage)
 
     return identifierConstant(&parser.previous);
 }
-static void markInitialized() { current->locals[current->localCount - 1].depth = current->scopeDepth; }
+static void markInitialized()
+{
+    // current->locals[current->localCount - 1].depth = current->scopeDepth;
+    current->pLocals->depth = current->scopeDepth;
+}
 static void defineVariable(uint8_t global)
 {
     if (current->scopeDepth > 0) {
