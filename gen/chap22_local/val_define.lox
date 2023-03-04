@@ -1,0 +1,7 @@
+var a = 3;
+val b = 5;
+print a + b;
+a = 6;
+print a + b;
+b = 3; // Error!
+print a + b;
