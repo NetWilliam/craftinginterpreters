@@ -1,0 +1,6 @@
+fun useVar() {
+  print oops;
+}
+
+var ooops = "too many o's!";
+
