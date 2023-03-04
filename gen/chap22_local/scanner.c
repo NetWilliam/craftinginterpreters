@@ -139,6 +139,8 @@ static TokenType identifierType()
             }
             break;
         case 'v':
+            if (checkKeyword(1, 2, "al", TOKEN_VAL) == TOKEN_VAL)
+                return TOKEN_VAL;
             return checkKeyword(1, 2, "ar", TOKEN_VAR);
         case 'w':
             return checkKeyword(1, 4, "hile", TOKEN_WHILE);
