@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "common.h"
 #include "compiler.h"
 #include "scanner.h"
+#include "trie.h"
 
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
@@ -127,7 +129,16 @@ static void declaration();
 static ParseRule *getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
 
-static uint8_t identifierConstant(Token *name) { return makeConstant(OBJ_VAL(copyString(name->start, name->length))); }
+static uint8_t identifierConstant(Token *name)
+{
+    char buf[256];
+    memcpy(buf, name->start, name->length);
+    buf[name->length] = '\0';
+    int ret = trie_query(buf);
+    if (ret != -1)
+        return ret;
+    return trie_insert(buf, makeConstant(OBJ_VAL(copyString(name->start, name->length))));
+}
 static uint8_t parseVariable(const char *errorMessage)
 {
     consume(TOKEN_IDENTIFIER, errorMessage);
@@ -373,6 +384,7 @@ static void statement()
 
 bool compile(const char *source, Chunk *chunk)
 {
+    trie_init(200003);
     initScanner(source);
     compilingChunk = chunk;
 
@@ -386,5 +398,6 @@ bool compile(const char *source, Chunk *chunk)
     }
 
     endCompiler();
+    trie_free();
     return !parser.hadError;
 }
