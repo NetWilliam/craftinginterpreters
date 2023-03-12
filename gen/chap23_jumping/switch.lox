@@ -1,13 +1,15 @@
-var x = 53;
+var x = 3;
 
-switch(x % 2) {
+switch(x / 2) {
     case 1:
         print "odd number";
     case 0:
         print "even number";
+    default:
+        print "I dont know";
 }
 
-switch(x % 3) {
+switch(x / 3) {
     case 1:
         print "remainder is 1";
     case 2:
@@ -15,3 +17,5 @@ switch(x % 3) {
     default:
         print "divisible by 3";
 }
+
+print "end";

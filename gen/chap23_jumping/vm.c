@@ -102,6 +102,12 @@ static InterpretResult run()
                 push(constant);
                 break;
             }
+            case OP_DUP: {
+                Value val = pop();
+                push(val);
+                push(val);
+                break;
+            }
             case OP_NIL:
                 push(NIL_VAL);
                 break;

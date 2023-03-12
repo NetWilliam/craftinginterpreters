@@ -526,6 +526,54 @@ static void forStatement()
 
     endScope();
 }
+struct PatchList {
+    int jumpPos;
+    struct PatchList *next;
+};
+static void switchStatement()
+{
+    consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
+    expression();
+    consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+
+    struct PatchList *phead = (struct PatchList *) malloc(sizeof(struct PatchList));
+    struct PatchList *curr = phead;
+    curr->next = NULL;
+    int prev_jump = -1;
+
+    consume(TOKEN_LEFT_BRACE, "Expect '{' before `switch`.");
+    bool is_case = false, is_default = false;
+    while ((is_case = match(TOKEN_CASE)) || (is_default = match(TOKEN_DEFAULT))) {
+        if (prev_jump != -1)
+            patchJump(prev_jump), prev_jump = -1;
+        if (is_case) {
+            emitByte(OP_DUP);
+            expression();
+            emitByte(OP_EQUAL);
+            prev_jump = emitJump(OP_JUMP_IF_FALSE);
+        }
+        consume(TOKEN_COLON, "Expect ':' after case and default.");
+        statement();
+        curr->jumpPos = emitJump(OP_JUMP);
+
+        curr->next = (struct PatchList *) malloc(sizeof(struct PatchList));
+        curr = curr->next;
+        curr->next = NULL;
+        curr->jumpPos = -1;
+    }
+    consume(TOKEN_RIGHT_BRACE, "Expect '}' after `switch`.");
+    if (prev_jump != -1)
+        patchJump(prev_jump);
+
+    while (phead != NULL) {
+        if (phead->jumpPos != -1)
+            patchJump(phead->jumpPos);
+        struct PatchList *old = phead;
+        phead = phead->next;
+        free(old);
+    }
+    emitByte(OP_POP);
+}
 static void ifStatement()
 {
     consume(TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
@@ -611,6 +659,8 @@ static void statement()
         ifStatement();
     } else if (match(TOKEN_WHILE)) {
         whileStatement();
+    } else if (match(TOKEN_SWITCH)) {
+        switchStatement();
     } else if (match(TOKEN_LEFT_BRACE)) {
         beginScope();
         block();
