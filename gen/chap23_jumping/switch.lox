@@ -1,0 +1,17 @@
+var x = 53;
+
+switch(x % 2) {
+    case 1:
+        print "odd number";
+    case 0:
+        print "even number";
+}
+
+switch(x % 3) {
+    case 1:
+        print "remainder is 1";
+    case 2:
+        print "remainder is 2";
+    default:
+        print "divisible by 3";
+}

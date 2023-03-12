@@ -1,0 +1,7 @@
+for (var i = 0; i < 3; i = i + 1) {
+    for (var j = 0; j < 3; j = j + 1) {
+        if (i + j > 3) continue;
+        print i + j;
+    }
+    print "new line";
+}
