@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "common.h"
 #include "compiler.h"
@@ -44,10 +45,17 @@ typedef struct {
     int depth;
 } Local;
 
+typedef struct LoopLinkList LoopLinkList;
+struct LoopLinkList {
+    int loopStart;
+    LoopLinkList *next;
+};
 typedef struct {
     Local locals[UINT8_COUNT];
     int localCount;
     int scopeDepth;
+    int inLoop;
+    LoopLinkList *lhead;
 } Compiler;
 
 Parser parser;
@@ -154,10 +162,13 @@ static void patchJump(int offset)
     currentChunk()->code[offset] = (jump >> 8) & 0xff;
     currentChunk()->code[offset + 1] = jump & 0xff;
 }
+
 static void initCompiler(Compiler *compiler)
 {
     compiler->localCount = 0;
     compiler->scopeDepth = 0;
+    compiler->inLoop = 0;
+    compiler->lhead = NULL;
     current = compiler;
 }
 static void endCompiler()
@@ -494,6 +505,7 @@ static void forStatement()
     }
 
     int loopStart = currentChunk()->count;
+
     int exitJump = -1;
     if (!match(TOKEN_SEMICOLON)) {
         expression();
@@ -515,9 +527,17 @@ static void forStatement()
         loopStart = incrementStart;
         patchJump(bodyJump);
     }
+    LoopLinkList *newHead = (LoopLinkList *) malloc(sizeof(LoopLinkList));
+    newHead->next = current->lhead;
+    newHead->loopStart = loopStart;
+    current->lhead = newHead;
 
     statement();
     emitLoop(loopStart);
+
+    LoopLinkList *old = current->lhead;
+    current->lhead = old->next;
+    free(old);
 
     if (exitJump != -1) {
         patchJump(exitJump);
@@ -554,6 +574,12 @@ static void printStatement()
 static void whileStatement()
 {
     int loopStart = currentChunk()->count;
+
+    LoopLinkList *newHead = (LoopLinkList *) malloc(sizeof(LoopLinkList));
+    newHead->next = current->lhead;
+    newHead->loopStart = loopStart;
+    current->lhead = newHead;
+
     consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
     expression();
     consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
@@ -562,6 +588,10 @@ static void whileStatement()
     emitByte(OP_POP);
     statement();
     emitLoop(loopStart);
+
+    LoopLinkList *old = current->lhead;
+    current->lhead = old->next;
+    free(old);
 
     patchJump(exitJump);
     emitByte(OP_POP);
@@ -601,16 +631,32 @@ static void declaration()
     if (parser.panicMode)
         synchronize();
 }
+static void continueStatement()
+{
+    if (current->inLoop == 0) {
+        error("continue must be inside a loop.");
+    }
+    assert(current->lhead);
+    consume(TOKEN_SEMICOLON, "Expect ';' after 'continue'.");
+
+    emitLoop(current->lhead->loopStart);
+}
 static void statement()
 {
     if (match(TOKEN_PRINT)) {
         printStatement();
     } else if (match(TOKEN_FOR)) {
+        current->inLoop++;
         forStatement();
+        current->inLoop--;
     } else if (match(TOKEN_IF)) {
         ifStatement();
     } else if (match(TOKEN_WHILE)) {
+        current->inLoop++;
         whileStatement();
+        current->inLoop--;
+    } else if (match(TOKEN_CONTINUE)) {
+        continueStatement();
     } else if (match(TOKEN_LEFT_BRACE)) {
         beginScope();
         block();
