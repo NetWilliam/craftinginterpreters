@@ -133,10 +133,13 @@ static void concatenate()
 static InterpretResult run()
 {
     CallFrame *frame = &vm.frames[vm.frameCount - 1];
+    register uint8_t *gip = frame->ip;
 
-#define READ_BYTE() (*frame->ip++)
+//#define READ_BYTE() (*frame->ip++)
+#define READ_BYTE() (*gip++)
 
-#define READ_SHORT() (frame->ip += 2, (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]))
+//#define READ_SHORT() (frame->ip += 2, (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]))
+#define READ_SHORT() (gip += 2, (uint16_t)((gip[-2] << 8) | gip[-1]))
 
 #define READ_CONSTANT() (frame->function->chunk.constants.values[READ_BYTE()])
 
@@ -161,7 +164,8 @@ static InterpretResult run()
             printf(" ]");
         }
         printf("\n");
-        disassembleInstruction(&frame->function->chunk, (int) (frame->ip - frame->function->chunk.code));
+        // disassembleInstruction(&frame->function->chunk, (int) (frame->ip - frame->function->chunk.code));
+        disassembleInstruction(&frame->function->chunk, (int) (gip - frame->function->chunk.code));
 #endif
 
         uint8_t instruction;
@@ -269,18 +273,21 @@ static InterpretResult run()
             }
             case OP_JUMP: {
                 uint16_t offset = READ_SHORT();
-                frame->ip += offset;
+                // frame->ip += offset;
+                gip += offset;
                 break;
             }
             case OP_JUMP_IF_FALSE: {
                 uint16_t offset = READ_SHORT();
                 if (isFalsey(peek(0)))
-                    frame->ip += offset;
+                    // frame->ip += offset;
+                    gip += offset;
                 break;
             }
             case OP_LOOP: {
                 uint16_t offset = READ_SHORT();
-                frame->ip -= offset;
+                // frame->ip -= offset;
+                gip -= offset;
                 break;
             }
             case OP_CALL: {
@@ -288,7 +295,9 @@ static InterpretResult run()
                 if (!callValue(peek(argCount), argCount)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
+                frame->ip = gip;
                 frame = &vm.frames[vm.frameCount - 1];
+                gip = frame->ip;
                 break;
             }
             case OP_RETURN: {
@@ -301,7 +310,9 @@ static InterpretResult run()
 
                 vm.stackTop = frame->slots;
                 push(result);
+                frame->ip = gip;
                 frame = &vm.frames[vm.frameCount - 1];
+                gip = frame->ip;
                 break;
             }
         }
