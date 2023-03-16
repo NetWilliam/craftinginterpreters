@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <stdlib.h>
+#include <math.h>
 
 #include "common.h"
 #include "compiler.h"
@@ -12,6 +14,46 @@
 
 VM vm; // [one]
 static Value clockNative(int argCount, Value *args) { return NUMBER_VAL((double) clock() / CLOCKS_PER_SEC); }
+static Value sqrtNative(int argCount, Value *arg)
+{
+    Value v1 = arg[0];
+    if (IS_NUMBER(v1) == false) {
+        char *type;
+        switch (v1.type) {
+            case VAL_BOOL:
+                type = "BOOL";
+                break;
+            case VAL_NIL:
+                type = "NIL";
+                break;
+            case VAL_OBJ:
+                switch (AS_OBJ(v1)->type) {
+                    case OBJ_FUNCTION:
+                        type = "FUNCTION";
+                        break;
+                    case OBJ_NATIVE:
+                        type = "NATIVE";
+                        break;
+                    case OBJ_STRING:
+                        type = "STRING";
+                        break;
+                    default:
+                        type = "OBJECT";
+                }
+                break;
+            case VAL_RUNTIME_ERROR:
+                type = "RUNTIME ERROR";
+                break;
+            default:
+                type = "UNKNOWN";
+        }
+        char buffer[1024];
+        snprintf(buffer, sizeof(buffer), "Expect an value, but get a %s", type);
+        ObjString *objstr = copyString(buffer, strlen(buffer));
+        return RE_VAL(objstr);
+    }
+    return NUMBER_VAL(sqrt(AS_NUMBER(v1)));
+}
 static void resetStack()
 {
     vm.stackTop = vm.stack;
@@ -58,6 +100,7 @@ void initVM()
     initTable(&vm.strings);
 
     defineNative("clock", clockNative);
+    defineNative("sqrt", sqrtNative);
 }
 
 void freeVM()
@@ -104,6 +147,10 @@ static bool callValue(Value callee, int argCount)
             case OBJ_NATIVE: {
                 NativeFn native = AS_NATIVE(callee);
                 Value result = native(argCount, vm.stackTop - argCount);
+                if (IS_RE(result)) {
+                    runtimeError("Error in native func: %s", AS_CSTRING(result));
+                    return false;
+                }
                 vm.stackTop -= argCount + 1;
                 push(result);
                 return true;

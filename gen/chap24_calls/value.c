@@ -57,6 +57,8 @@ bool valuesEqual(Value a, Value b)
             return AS_NUMBER(a) == AS_NUMBER(b);
         case VAL_OBJ:
             return AS_OBJ(a) == AS_OBJ(b);
+        case VAL_RUNTIME_ERROR:
+            return AS_RE(a) == AS_RE(b);
         default:
             return false; // Unreachable.
     }

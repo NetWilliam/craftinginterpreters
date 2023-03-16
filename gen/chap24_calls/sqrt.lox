@@ -1,2 +1,6 @@
 print sqrt(9);
+fun a() {
+    return 5;
+}
+print sqrt(a);
 print sqrt("hello world!");
