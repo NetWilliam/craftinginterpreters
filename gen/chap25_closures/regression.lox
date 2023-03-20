@@ -1,0 +1,12 @@
+fun get_adder(x) {
+    fun adder() {
+        x = x + 1;
+        return x;
+    }
+    return adder;
+}
+
+var a1 = get_adder(5);
+var a2 = get_adder(7);
+print a1();
+print a2();
