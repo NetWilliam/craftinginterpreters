@@ -1,9 +1,14 @@
 fun get_adder(x) {
-    fun adder() {
-        x = x + 1;
-        return x;
+    var ret;
+    {
+        var y = x + 1;
+        fun adder() {
+            y = y + 1;
+            return y;
+        }
+        ret = adder;
     }
-    return adder;
+    return ret;
 }
 
 var a1 = get_adder(5);

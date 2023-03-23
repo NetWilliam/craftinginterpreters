@@ -6,6 +6,7 @@
 #include "compiler.h"
 #include "scanner.h"
 
+//#define DEBUG_PRINT_CODE true
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
 #endif
@@ -587,11 +588,20 @@ static void function(FunctionType type)
     block();
 
     ObjFunction *function = endCompiler();
-    emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
 
-    for (int i = 0; i < function->upvalueCount; i++) {
-        emitByte(compiler.upvalues[i].isLocal ? 1 : 0);
-        emitByte(compiler.upvalues[i].index);
+    uint8_t functionConstant = makeConstant(OBJ_VAL(function));
+    if (function->upvalueCount > 0) {
+        emitBytes(OP_CLOSURE, functionConstant);
+
+        // Emit arguments for each upvalue to know whether to capture a local
+        // or an upvalue.
+        for (int i = 0; i < function->upvalueCount; i++) {
+            emitByte(compiler.upvalues[i].isLocal ? 1 : 0);
+            emitByte(compiler.upvalues[i].index);
+        }
+    } else {
+        // No need to create a closure.
+        emitBytes(OP_CONSTANT, functionConstant);
     }
 }
 static void funDeclaration()
