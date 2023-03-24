@@ -1,0 +1,57 @@
+fun get_obj() {
+    var x = 0;
+    var y = 0;
+    fun getx() {
+        return x;
+    }
+    fun setx(nx) {
+        x = nx;
+        return;
+    }
+    fun gety() {
+        return y;
+    }
+    fun sety(ny) {
+        y = ny;
+        return;
+    }
+    fun route(op) {
+       if (op == "getx") {
+         return getx;
+       } 
+       if (op == "gety") {
+        return gety;
+       }
+       if (op == "setx") {
+        return setx;
+       }
+       if (op == "sety") {
+        return sety;
+       }
+       return route;
+    }
+    return route;
+}
+
+var v1 = get_obj();
+print "v1 by default";
+print v1("getx")();
+print v1("gety")();
+
+v1("setx")(3);
+v1("sety")(5);
+print "v1 after update";
+print v1("getx")();
+print v1("gety")();
+
+var v2 = get_obj();
+v2("setx")(6);
+v2("sety")(9);
+print "v2 after update";
+print v2("getx")();
+print v2("gety")();
+
+print "v1 after v2's update";
+print v1("getx")();
+print v1("gety")();
+
