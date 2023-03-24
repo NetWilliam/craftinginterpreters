@@ -15,6 +15,14 @@ fun get_obj() {
         y = ny;
         return;
     }
+    fun add(p2) {
+        var nx = x + p2("getx")();
+        var ny = y + p2("gety")();
+        var new_vec = get_obj();
+        new_vec("setx")(nx);
+        new_vec("sety")(ny);
+        return new_vec;
+    }
     fun route(op) {
        if (op == "getx") {
          return getx;
@@ -27,6 +35,9 @@ fun get_obj() {
        }
        if (op == "sety") {
         return sety;
+       }
+       if (op == "add") {
+        return add;
        }
        return route;
     }
@@ -55,3 +66,7 @@ print "v1 after v2's update";
 print v1("getx")();
 print v1("gety")();
 
+var v3 = v1("add")(v2);
+print "v3 = v2 + v1:";
+print v3("getx")();
+print v3("gety")();
