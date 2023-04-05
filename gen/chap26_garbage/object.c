@@ -9,11 +9,15 @@
 
 #define ALLOCATE_OBJ(type, objectType) (type *) allocateObject(sizeof(type), objectType)
 
+bool isMarked(Obj *o) { return (o->type | OBJ_MASK_MARK) != 0; }
+void setMark(Obj *o) { o->type |= OBJ_MASK_MARK; }
+void clearMark(Obj *o) { o->type &= ~OBJ_MASK_MARK; }
+
 static Obj *allocateObject(size_t size, ObjType type)
 {
     Obj *object = (Obj *) reallocate(NULL, 0, size);
     object->type = type;
-    object->isMarked = false;
+    clearMark(object);
 
     object->next = vm.objects;
     vm.objects = object;

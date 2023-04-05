@@ -38,7 +38,7 @@ void markObject(Obj *object)
 {
     if (object == NULL)
         return;
-    if (object->isMarked)
+    if (isMarked(object))
         return;
 
 #ifdef DEBUG_LOG_GC
@@ -47,7 +47,7 @@ void markObject(Obj *object)
     printf("\n");
 #endif
 
-    object->isMarked = true;
+    setMark(object);
 
     if (vm.grayCapacity < vm.grayCount + 1) {
         vm.grayCapacity = GROW_CAPACITY(vm.grayCapacity);
@@ -78,7 +78,7 @@ static void blackenObject(Obj *object)
     printf("\n");
 #endif
 
-    switch (object->type) {
+    switch (object->type | ~OBJ_MASK_MARK) {
         case OBJ_CLOSURE: {
             ObjClosure *closure = (ObjClosure *) object;
             markObject((Obj *) closure->function);
@@ -107,7 +107,7 @@ static void freeObject(Obj *object)
     printf("%p free type %d\n", (void *) object, object->type);
 #endif
 
-    switch (object->type) {
+    switch (object->type | ~OBJ_MASK_MARK) {
         case OBJ_CLOSURE: {
             ObjClosure *closure = (ObjClosure *) object;
             FREE_ARRAY(ObjUpvalue *, closure->upvalues, closure->upvalueCount);
@@ -163,8 +163,8 @@ static void sweep()
     Obj *previous = NULL;
     Obj *object = vm.objects;
     while (object != NULL) {
-        if (object->isMarked) {
-            object->isMarked = false;
+        if (isMarked(object)) {
+            clearMark(object);
             previous = object;
             object = object->next;
         } else {

@@ -5,7 +5,7 @@
 #include "chunk.h"
 #include "value.h"
 
-#define OBJ_TYPE(value) (AS_OBJ(value)->type)
+#define OBJ_TYPE(value) (AS_OBJ(value)->type & ~OBJ_MASK_MARK)
 
 #define IS_CLOSURE(value) isObjType(value, OBJ_CLOSURE)
 #define IS_FUNCTION(value) isObjType(value, OBJ_FUNCTION)
@@ -18,13 +18,24 @@
 #define AS_STRING(value) ((ObjString *) AS_OBJ(value))
 #define AS_CSTRING(value) (((ObjString *) AS_OBJ(value))->chars)
 
-typedef enum { OBJ_CLOSURE, OBJ_FUNCTION, OBJ_NATIVE, OBJ_STRING, OBJ_UPVALUE } ObjType;
+typedef enum {
+    OBJ_CLOSURE,
+    OBJ_FUNCTION,
+    OBJ_NATIVE,
+    OBJ_STRING,
+    OBJ_UPVALUE,
+    OBJ_MASK_MARK = (1 << 30),
+} ObjType;
 
 struct Obj {
     ObjType type;
-    bool isMarked;
+    // bool isMarked;
     struct Obj *next;
 };
+
+bool isMarked(Obj *o);
+void setMark(Obj *o);
+void clearMark(Obj *o);
 
 typedef struct {
     Obj obj;

@@ -146,7 +146,7 @@ void tableRemoveWhite(Table *table)
 {
     for (int i = 0; i < table->capacity; i++) {
         Entry *entry = &table->entries[i];
-        if (entry->key != NULL && !entry->key->obj.isMarked) {
+        if (entry->key != NULL && !isMarked(&entry->key->obj)) {
             tableDelete(table, entry->key);
         }
     }
